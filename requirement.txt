@@ -21,3 +21,4 @@ setuptools
 chardet
 comtypes
 opencv-python
+cx_Freeze
