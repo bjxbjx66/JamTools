@@ -22,7 +22,6 @@ from socketserver import ThreadingMixIn,TCPServer
 import gzip
 
 import qrcode
-from PIL import ImageQt
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QUrl, QObject, QSettings, QStandardPaths
 from PyQt5.QtGui import QPixmap, QPainter, QPen, QColor, QDesktopServices, QIcon
 from PyQt5.QtWidgets import QApplication, QLabel, QPushButton, QGroupBox, QComboBox, QFileDialog, QCheckBox, QLineEdit
@@ -549,17 +548,35 @@ class WebFilesTransmitter_infolabel(QLabel):
         self.showm_signal.emit("链接已复制到剪切板")
 
     def get_qrcode(self, url):
+        import qrcode
+        from io import BytesIO
+        from PyQt5.QtCore import Qt
+
         qr = qrcode.QRCode(
             version=None,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
             box_size=10,
             border=1,
         )
-        qr.add_data(str(url))
+        qr.add_data(url)
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
-        pix = ImageQt.toqpixmap(img)
-        self.qrcode_label.setPixmap(pix.scaled(self.qrcode_label.width(), self.qrcode_label.height()))
+        
+        # 修复：强制转为RGB模式（可选）
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        
+        # 保存到内存并加载为QPixmap
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        pix = QPixmap()
+        pix.loadFromData(buffer.getvalue())
+        
+        self.qrcode_label.setPixmap(pix.scaled(
+            self.qrcode_label.width(),
+            self.qrcode_label.height(),
+            Qt.KeepAspectRatio
+        ))
 
         # img.save()
 
